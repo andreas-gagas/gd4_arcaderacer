@@ -1,19 +1,17 @@
-extends RigidBody3D
-@onready var car_rigidbody = $"."
-@onready var car_mesh = $"CarMesh Anchor"
+extends Node3D
+@onready var parent_node = $".."
+@onready var car_rigidbody = $"../SphereRB"
+@onready var car_mesh = self
 #@onready var body_mesh = $CarMesh/body
-@onready var ground_ray = $RayCast3D
+@onready var ground_ray = $"../RayCast3D"
 #@onready var right_wheel = $"CarMesh/wheel-front-right"
 #@onready var left_wheel = $"CarMesh/wheel-front-left"
 
 @export var carResetPosition : Node3D
-
-#the default settings below is ONLY configured for Mass 5kg, friction 5, rough enabled, bounce 0, absorbent disabled 
-
-
 # Where to place the car mesh relative to the sphere
 @export_category("General Vehicle Settings")
-@export var sphere_offset = Vector3.DOWN
+#@export var sphere_offset = Vector3.DOWN
+@export var car_position_offset = Vector3.DOWN
 @export var top_speed = 10
 @export var drift_top_speed = 60
 # Engine power
@@ -35,32 +33,35 @@ var turn_input = 0
 
 var is_drifting : bool = false
 
-#func _ready():
-#	ground_ray.add_exception(self)
-	
-func _physics_process(delta):
-	car_mesh.position = position + sphere_offset
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	pass # Replace with function body.
+
+func _physics_process(delta: float) -> void:
 	if ground_ray.is_colliding():
 		if turn_input > 0 and turn_input < 0:		# turn input NOT PRESSED
-			apply_central_force(-car_mesh.global_transform.basis.z * speed_input)
+			car_rigidbody.apply_central_force(-car_mesh.global_transform.basis.z * speed_input)
 		else:		# turn input pressed
 			if speed_input != 0:
-				apply_central_force(-car_mesh.global_transform.basis.z * 2.5 * speed_input)
+				car_rigidbody.apply_central_force(-car_mesh.global_transform.basis.z * 2.5 * speed_input)
 			else:	
-				apply_central_force(-car_mesh.global_transform.basis.z * 2.5 * speed_input)
+				car_rigidbody.rotate(Vector3.UP, turn_input)
 				
 		# clamp velocity
-		linear_velocity = clamp_velocity(linear_velocity, top_speed)
+		car_rigidbody.linear_velocity = clamp_velocity(car_rigidbody.linear_velocity, top_speed)
 		#print("(DEBUG) speed: " + str(linear_velocity))
 		pass
+	pass
 
-
-func _process(delta):
-	# respawn
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta: float) -> void:
+	# DEBUG respawn
 	if Input.is_key_pressed(KEY_R):
-		self.position = carResetPosition.position
-		linear_velocity = Vector3.ZERO
+		parent_node.position = carResetPosition.position
+		car_rigidbody.linear_velocity = Vector3.ZERO
 	
+	# sync mesh to rb
+	self.global_position = car_rigidbody.global_position + car_position_offset
 	
 	if not ground_ray.is_colliding():
 		return
@@ -84,32 +85,19 @@ func _process(delta):
 	#left_wheel.rotation.y = turn_input
 	
 	# old steering & car mesh positioning method
-	if linear_velocity.length() > turn_stop_limit:
+	if car_rigidbody.linear_velocity.length() > turn_stop_limit:
 		var new_basis = car_mesh.global_transform.basis.rotated(car_mesh.global_transform.basis.y, turn_input)
 		car_mesh.global_transform.basis = car_mesh.global_transform.basis.slerp(new_basis, turn_speed * delta)
 		car_mesh.global_transform = car_mesh.global_transform.orthonormalized()
-		var t = -turn_input * linear_velocity.length() / body_tilt
+		var t = -turn_input * car_rigidbody.linear_velocity.length() / body_tilt
 		#body_mesh.rotation.z = lerp(body_mesh.rotation.z, t, 5.0 * delta)
 		if ground_ray.is_colliding():
 			var n = ground_ray.get_collision_normal()
 			var xform = align_with_y(car_mesh.global_transform, n)
 			car_mesh.global_transform = car_mesh.global_transform.interpolate_with(xform, 10.0 * delta)
-	
-	# new steering
-	#if linear_velocity.length() > 0:
-		#var current_angle = rotation
-		#var angle_diff = wrapf(turn_input - current_angle, -PI, PI)
-		#rotation += sign(angle_diff) * min(turn_speed * delta, abs(angle_diff))
-		#pass
-		
-# Function to clamp a Vector3
-func clamp_vector3(vector: Vector3, min_vector: Vector3, max_vector: Vector3) -> Vector3:
-	return Vector3(
-		clamp(vector.x, min_vector.x, max_vector.x),
-		clamp(vector.y, min_vector.y, max_vector.y),
-		clamp(vector.z, min_vector.z, max_vector.z)
-		)
 
+	pass
+	
 func clamp_velocity(velocity: Vector3, max_length: float) -> Vector3:
 	if velocity.length() > max_length:
 		return velocity.normalized() * max_length
