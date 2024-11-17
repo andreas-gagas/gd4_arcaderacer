@@ -74,7 +74,9 @@ spring_damping = 5.0
 
 [node name="Pivot" type="Node3D" parent="."]
 
-[node name="Circle_003" type="MeshInstance3D" parent="Pivot"]
+[node name="vertical_pivot" type="Node3D" parent="Pivot"]
+
+[node name="Circle_003" type="MeshInstance3D" parent="Pivot/vertical_pivot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.125, 0, 0)
 mesh = SubResource("ArrayMesh_8chcb")
 skeleton = NodePath("")

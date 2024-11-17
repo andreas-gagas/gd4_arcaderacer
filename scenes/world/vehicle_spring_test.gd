@@ -2,6 +2,7 @@ extends Node3D
 
 @onready var raycast : RayCast3D = $RayCast3D
 @onready var pivot: Node3D = $Pivot
+@onready var vertical_pivot: Node3D = $Pivot/vertical_pivot
 
 
 @export var spring_strength : float = 10
@@ -17,7 +18,11 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	
 	pass
-	
+
+func _physics_process(delta: float) -> void:
+	stick_tires_to_ground()
+	pass
+
 func update_spring(rigidbody : RigidBody3D, delta : float) -> void:
 	if raycast.is_colliding():
 		var hit_pos = raycast.get_collision_point()
@@ -37,6 +42,7 @@ func update_spring(rigidbody : RigidBody3D, delta : float) -> void:
 		pass
 	pass
 
+# this is purely only for visual stuff
 func _spin_tires(vel:float, accel:float, max_vel:float, delta:float) -> void:
 	var v = vel;
 	if (accel >= 1.0):
@@ -47,3 +53,15 @@ func _spin_tires(vel:float, accel:float, max_vel:float, delta:float) -> void:
 	var angle_change = (v * delta) / tire_radius
 	
 	pivot.rotate_object_local(Vector3.RIGHT, angle_change)
+	
+func stick_tires_to_ground():
+	if raycast.is_colliding():	# if hits ground, put tires on ground
+		vertical_pivot.global_position.y = raycast.get_collision_point().y
+		pass
+	else:	# put tires on raycast target
+		# temporarily reset position
+		vertical_pivot.position = Vector3(0, 0, 0)
+		# move tires to raycast target
+		vertical_pivot.position.y = raycast.target_position.y
+		pass
+	pass
