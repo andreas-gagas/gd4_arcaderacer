@@ -20,10 +20,11 @@ func _process(delta: float) -> void:
 	pass
 
 func _physics_process(delta: float) -> void:
-	stick_tires_to_ground()
 	pass
 
 func update_spring(rigidbody : RigidBody3D, delta : float) -> void:
+	#print("delta spring: " + str(delta))
+	stick_tires_to_ground()
 	if raycast.is_colliding():
 		var hit_pos = raycast.get_collision_point()
 		var max_length = abs(raycast.target_position.y)

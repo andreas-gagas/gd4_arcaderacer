@@ -204,7 +204,7 @@ func update(source: String, delta=get_physics_process_delta_time()):
 	if update_process_mode == UpdateProcessMode.MANUAL:
 		# Make sure to auto advance even in MANUAL mode
 		if _was_transited:
-			call_deferred("update")
+			call_deferred("update", source)
 
 # Set trigger to be tested with condition, then trigger _transit on next update, 
 # automatically call update() if process_mode set to MANUAL and auto_update true
