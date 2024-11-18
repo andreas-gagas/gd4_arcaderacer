@@ -12,6 +12,8 @@ extends RigidBody3D
 @export var braking_decel : float = 60
 @export var max_turn_speed = 60
 
+@onready var fsm: Node = $StateMachinePlayer
+
 var look_dir : Vector3
 var fwd_speed : float
 var abs_speed : float
@@ -33,6 +35,7 @@ func _ready() -> void:
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
+	fsm.update("process", delta)
 	if Input.is_key_pressed(KEY_ESCAPE):
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -47,6 +50,7 @@ func _process(delta: float) -> void:
 	pass
 	
 func _physics_process(delta: float) -> void:
+	fsm.update("physics", delta)
 	for spring in springs:
 		if spring != null:
 			spring.update_spring(self, delta)
@@ -84,7 +88,7 @@ func _physics_process(delta: float) -> void:
 		
 		# Steering
 		#var max_turn_speed = 1.0  # Dummy value for max turn speed
-		print("fwd_speed: " + str(fwd_speed))
+		#print("fwd_speed: " + str(fwd_speed))
 		var goal_turn_speed
 		if (fwd_speed < 0):
 			goal_turn_speed = max_turn_speed * -steering_input
