@@ -40,6 +40,7 @@ func _process(delta: float) -> void:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		
 	
+
 	throttle_input = Input.get_axis("move_back", "move_forward")
 	steering_input = Input.get_axis("move_right", "move_left")
 	input_drift = Input.is_action_pressed("jump")
@@ -83,7 +84,12 @@ func _physics_process(delta: float) -> void:
 		
 		# Steering
 		#var max_turn_speed = 1.0  # Dummy value for max turn speed
-		var goal_turn_speed = max_turn_speed * steering_input
+		print("fwd_speed: " + str(fwd_speed))
+		var goal_turn_speed
+		if (fwd_speed < 0):
+			goal_turn_speed = max_turn_speed * -steering_input
+		else:
+			goal_turn_speed = max_turn_speed * steering_input
 		turn_vel = move_toward(turn_vel, goal_turn_speed, turn_accel * delta)
 		#print("turn_vel : " + str(turn_vel) + " angular vel: " + str(angular_velocity) + " lin_vel : " + str(linear_velocity))
 		rotate_y(deg_to_rad(turn_vel) * delta)
