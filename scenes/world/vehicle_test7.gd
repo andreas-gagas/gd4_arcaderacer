@@ -5,6 +5,7 @@ extends RigidBody3D
 @export var springs : Array[Node3D]
 @export var top_speed_fwd : float = 20
 @export var top_speed_back : float = 20
+@export var drifting_top_speed_fwd : float = 20
 @export var force_responsiveness : float = 0.2
 @export var turn_accel : float = 360
 @export var acceleration_fwd : float = 40
@@ -15,6 +16,7 @@ extends RigidBody3D
 @onready var fsm: Node = $StateMachinePlayer
 @onready var state_grounded: Node = $StateMachinePlayer/Grounded
 @onready var state_airborne: Node = $StateMachinePlayer/Airborne
+@onready var state_drifting: Node = $StateMachinePlayer/Drifting
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

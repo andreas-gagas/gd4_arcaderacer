@@ -2,10 +2,6 @@ extends Node
 @onready var vehicle_root: RigidBody3D = $"../.."
 @onready var fsm: Node = $".."
 
-var look_dir : Vector3
-var fwd_speed : float
-var abs_speed : float
-
 var throttle_input : float
 var steering_input : float
 var input_drift : bool = false
@@ -14,15 +10,13 @@ var turn_vel : float = 0
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-	# init look dir
-	look_dir = -vehicle_root.global_transform.basis.z;
-	look_dir.y = 0
-	look_dir = look_dir.normalized()
 	pass # Replace with function body.
 
 func fsm_process(delta : float):
 	if Input.is_key_pressed(KEY_Q):
 		fsm.set_trigger("Grounded->Airborne")
+	if Input.is_action_just_pressed("jump"):
+		fsm.set_trigger("Grounded->Drifting")
 	if Input.is_key_pressed(KEY_ESCAPE):
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
