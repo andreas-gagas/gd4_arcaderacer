@@ -28,6 +28,6 @@ func _on_state_machine_player_updated(source: Variant, state: Variant, delta: Va
 
 
 func _on_state_machine_player_entered(to: Variant) -> void:
-	print("hello im at airborne")
+	print("hello im at " + str(to))
 
 	pass # Replace with function body.

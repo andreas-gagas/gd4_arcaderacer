@@ -13,6 +13,8 @@ func _ready() -> void:
 	pass # Replace with function body.
 
 func fsm_process(delta : float):
+	if Input.is_key_pressed(KEY_Q):
+		fsm.set_trigger("Grounded->Airborne")
 	if Input.is_action_just_released("jump"):
 		fsm.set_trigger("Drifting->Grounded")
 	if Input.is_key_pressed(KEY_ESCAPE):
@@ -40,7 +42,7 @@ func fsm_physics(delta : float):
 	var look_dir = -vehicle_root.global_transform.basis.z
 	look_dir.y = 0
 	look_dir = look_dir.normalized()
-	
+
 	var grip_dir = -vehicle_root.global_transform.basis.x
 	grip_dir.y = 0
 	grip_dir = grip_dir.normalized()
@@ -89,6 +91,21 @@ func fsm_physics(delta : float):
 		instant_accel = (goal_grip_vel - grip_vel) / delta
 		vehicle_root.apply_central_force(grip_dir * instant_accel * vehicle_root.mass * vehicle_root.force_responsiveness)
 		# ---------- PASTED CODE ENDS HERE
+		
+		# drift code?
+		if vehicle_root.drift_dir == vehicle_root.drift_direction.RIGHT:
+			vehicle_root.apply_torque(Vector3.UP * 45 * (vehicle_root.force_responsiveness * 1.5))
+		elif vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
+			vehicle_root.apply_torque(Vector3.UP * -45 * (vehicle_root.force_responsiveness * 1.5))
+		
+		# Adjust grip force
+		var drift_force = (steering_input * 2) * vehicle_root.linear_velocity.length() / vehicle_root.top_speed_fwd
+		drift_force *= .25
+		var grip_dir2 = -vehicle_root.global_transform.basis.x
+		grip_dir2.y = 0
+		grip_dir2 = grip_dir.normalized()
+		var adjusted_grip_force = vehicle_root.force_responsiveness * (1 - abs(drift_force * 2))
+		vehicle_root.apply_central_force(grip_dir2 * adjusted_grip_force)
 	pass
 
 func remap(value, from_min, from_max, to_min, to_max):
@@ -104,7 +121,15 @@ func _on_state_machine_player_updated(source: Variant, state: Variant, delta: Va
 			fsm_physics(delta)
 	pass # Replace with function body.
 
-
-func _on_state_machine_player_entered(to: Variant) -> void:
-	print("hello im at drifting")
+func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
+	
+	# ON STATE ENTER
+	if to == vehicle_root.state_drifting.name:
+		pass
+	
+	# ON STATE EXIT
+	if from == vehicle_root.state_drifting.name:
+		vehicle_root.angular_velocity = Vector3.ZERO
+		vehicle_root.drift_dir == vehicle_root.drift_direction.NONE
+		pass
 	pass # Replace with function body.

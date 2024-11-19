@@ -15,8 +15,13 @@ func _ready() -> void:
 func fsm_process(delta : float):
 	if Input.is_key_pressed(KEY_Q):
 		fsm.set_trigger("Grounded->Airborne")
-	if Input.is_action_just_pressed("jump"):
-		fsm.set_trigger("Grounded->Drifting")
+	if Input.is_action_pressed("jump") && !is_zero_approx(steering_input):
+		if steering_input > 0:
+			vehicle_root.drift_dir = vehicle_root.drift_direction.RIGHT
+			fsm.set_trigger("Grounded->Drifting")
+		elif steering_input < 0:
+			vehicle_root.drift_dir = vehicle_root.drift_direction.LEFT
+			fsm.set_trigger("Grounded->Drifting")
 	if Input.is_key_pressed(KEY_ESCAPE):
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -106,7 +111,14 @@ func _on_state_machine_player_updated(source: Variant, state: Variant, delta: Va
 			fsm_physics(delta)
 	pass # Replace with function body.
 
-
-func _on_state_machine_player_entered(to: Variant) -> void:
-	print("hello im at grounded")
+func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
+	
+	# ON STATE ENTER
+	if (to == vehicle_root.state_grounded.name):
+		#print("zeroing angular velocity!")
+		pass
+		
+	# ON STATE EXIT
+	if (from == vehicle_root.state_grounded.name):
+		pass
 	pass # Replace with function body.

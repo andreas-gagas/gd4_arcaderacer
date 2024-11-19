@@ -18,6 +18,9 @@ extends RigidBody3D
 @onready var state_airborne: Node = $StateMachinePlayer/Airborne
 @onready var state_drifting: Node = $StateMachinePlayer/Drifting
 
+var drift_dir : drift_direction = drift_direction.NONE
+
+enum drift_direction { NONE, LEFT, RIGHT }
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	pass # Replace with function body.
