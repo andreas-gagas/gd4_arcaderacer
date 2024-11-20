@@ -13,8 +13,6 @@ func _ready() -> void:
 	pass # Replace with function body.
 
 func fsm_process(delta : float):
-	if Input.is_key_pressed(KEY_Q):
-		fsm.set_trigger("Grounded->Airborne")
 	if Input.is_action_just_released("jump"):
 		fsm.set_trigger("Drifting->Grounded")
 	if Input.is_key_pressed(KEY_ESCAPE):
@@ -26,6 +24,9 @@ func fsm_process(delta : float):
 	throttle_input = Input.get_axis("move_back", "move_forward")
 	steering_input = Input.get_axis("move_right", "move_left")
 	input_drift = Input.is_action_pressed("jump")
+	
+	
+		
 	pass
 
 func fsm_physics(delta : float):
@@ -125,11 +126,43 @@ func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
 	
 	# ON STATE ENTER
 	if to == vehicle_root.state_drifting.name:
-		pass
+		
+		#print(str(vehicle_root.drift_dir))
+		# set mesh rotation
+		if vehicle_root.drift_dir == vehicle_root.drift_direction.RIGHT:
+			#print("rotating right!!")
+			#vehicle_root.car_mesh_rotation_offset.rotation.lerp(Vector3(0, 45, 0), delta)
+			#vehicle_root.car_mesh_rotation_offset.rotation.y = 0 + (90 - 0) * delta / 6
+			#vehicle_root.car_mesh_rotation_offset.rotation.y = 45
+			var tween = get_tree().create_tween()
+			var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(45), deg_to_rad(0))
+			tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, 1.0).from_current()
+
+
+		elif vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
+			#vehicle_root.car_mesh_rotation_offset.rotation.lerp(Vector3(0, -45, 0), delta)
+			#vehicle_root.car_mesh_rotation_offset.rotation.y = 0 + (-90 - 0) * delta / 6
+			#vehicle_root.car_mesh_rotation_offset.rotation.y = -45
+			# start emitting drift particles
+			vehicle_root.drift_particles.emitting = true
+			pass
 	
 	# ON STATE EXIT
 	if from == vehicle_root.state_drifting.name:
+		# revert drift physics
 		vehicle_root.angular_velocity = Vector3.ZERO
+		
+		# revert car_mesh rotation offset
+		if vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
+			vehicle_root.car_mesh_rotation_offset.rotation.y = 0
+		elif vehicle_root.drift_dir == vehicle_root.drift_direction.RIGHT:
+			vehicle_root.car_mesh_rotation_offset.rotation.y = 0
+		
+		# revert drift_dir parameter
+		#print("Reverting drift_dir!")
 		vehicle_root.drift_dir == vehicle_root.drift_direction.NONE
+		
+		# stop emitting drift particles
+		vehicle_root.drift_particles.emitting = false
 		pass
 	pass # Replace with function body.

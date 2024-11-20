@@ -17,6 +17,8 @@ extends RigidBody3D
 @onready var state_grounded: Node = $StateMachinePlayer/Grounded
 @onready var state_airborne: Node = $StateMachinePlayer/Airborne
 @onready var state_drifting: Node = $StateMachinePlayer/Drifting
+@onready var car_mesh_rotation_offset: Node3D = $CarMeshRotationOffset
+@onready var drift_particles: GPUParticles3D = $"CarMeshRotationOffset/car_mesh/Wheel Particles/drift_particles"
 
 var drift_dir : drift_direction = drift_direction.NONE
 

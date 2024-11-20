@@ -75,7 +75,7 @@ func _process(delta: float) -> void:
 		
 	# drift
 	if is_drifting:
-		print("drifting!!!")
+		# print("drifting!!!")
 		speed_input = Input.get_axis("move_back", "move_forward") * drift_acceleration
 		turn_input = Input.get_axis("move_right", "move_left") * deg_to_rad(drift_steering)
 	else:
