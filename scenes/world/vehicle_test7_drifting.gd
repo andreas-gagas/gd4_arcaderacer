@@ -9,22 +9,25 @@ var turn_vel : float = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	pass # Replace with function body.
 
 func fsm_process(delta : float):
+	GamepadControllerManager.update_current_controller(0, "PS4 Controller")
+	
 	if Input.is_action_just_released("jump"):
 		fsm.set_trigger("Drifting->Grounded")
-	if Input.is_key_pressed(KEY_ESCAPE):
+	if Input.is_action_just_pressed("escape"):
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		else:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	throttle_input = Input.get_axis("move_back", "move_forward")
-	steering_input = Input.get_axis("move_right", "move_left")
+	steering_input = Input.get_axis("move_right", "move_left") / 2
 	input_drift = Input.is_action_pressed("jump")
-	
+	print("throttle : " + str(throttle_input) + " steering: " + str(steering_input) )
 	
 		
 	pass
@@ -93,21 +96,33 @@ func fsm_physics(delta : float):
 		vehicle_root.apply_central_force(grip_dir * instant_accel * vehicle_root.mass * vehicle_root.force_responsiveness)
 		# ---------- PASTED CODE ENDS HERE
 		
-		# drift code?
-		if vehicle_root.drift_dir == vehicle_root.drift_direction.RIGHT:
-			vehicle_root.apply_torque(Vector3.UP * 45 * (vehicle_root.force_responsiveness * 1.5))
-		elif vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
-			vehicle_root.apply_torque(Vector3.UP * -45 * (vehicle_root.force_responsiveness * 1.5))
+		## drift code?
+		#if vehicle_root.drift_dir == vehicle_root.drift_direction.RIGHT:
+			#vehicle_root.apply_torque(Vector3.UP * 45 * (vehicle_root.force_responsiveness * 1.5))
+		#elif vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
+			#vehicle_root.apply_torque(Vector3.UP * -45 * (vehicle_root.force_responsiveness * 1.5))
 		
-		# Adjust grip force
-		var drift_force = (steering_input * 2) * vehicle_root.linear_velocity.length() / vehicle_root.top_speed_fwd
-		drift_force *= .25
-		var grip_dir2 = -vehicle_root.global_transform.basis.x
-		grip_dir2.y = 0
-		grip_dir2 = grip_dir.normalized()
-		var adjusted_grip_force = vehicle_root.force_responsiveness * (1 - abs(drift_force * 2))
-		vehicle_root.apply_central_force(grip_dir2 * adjusted_grip_force)
+		apply_drift_force()
 	pass
+	
+func apply_drift_force():
+	var loc_drift_dir = 0
+	if vehicle_root.drift_dir == vehicle_root.drift_direction.RIGHT:
+		loc_drift_dir = 1
+	elif vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
+		loc_drift_dir = -1
+		
+	var drift_force = (loc_drift_dir) * vehicle_root.linear_velocity.length() / vehicle_root.top_speed_fwd
+	drift_force *= vehicle_root.drift_strength
+	
+	vehicle_root.apply_torque(Vector3.UP * drift_force)
+
+	var grip_dir = -vehicle_root.global_transform.basis.x
+	grip_dir.y = 0
+	grip_dir = grip_dir.normalized()
+	
+	var adjusted_grip_force = max(0, 1 - abs(drift_force))
+	vehicle_root.apply_central_force(grip_dir * adjusted_grip_force)
 
 func remap(value, from_min, from_max, to_min, to_max):
 	return to_min + (value - from_min) * (to_max - to_min) / (from_min - from_max)
@@ -123,10 +138,11 @@ func _on_state_machine_player_updated(source: Variant, state: Variant, delta: Va
 	pass # Replace with function body.
 
 func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
+	var mesh_turn_tween 
 	
 	# ON STATE ENTER
 	if to == vehicle_root.state_drifting.name:
-		
+		GamepadControllerManager.start_controller_vibration(1,2,1)
 		#print(str(vehicle_root.drift_dir))
 		# set mesh rotation
 		if vehicle_root.drift_dir == vehicle_root.drift_direction.RIGHT:
@@ -134,18 +150,29 @@ func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
 			#vehicle_root.car_mesh_rotation_offset.rotation.lerp(Vector3(0, 45, 0), delta)
 			#vehicle_root.car_mesh_rotation_offset.rotation.y = 0 + (90 - 0) * delta / 6
 			#vehicle_root.car_mesh_rotation_offset.rotation.y = 45
-			var tween = get_tree().create_tween()
+			if mesh_turn_tween:
+				mesh_turn_tween.kill()
+			mesh_turn_tween = get_tree().create_tween()
 			var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(45), deg_to_rad(0))
-			tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, 1.0).from_current()
+			mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .5).from_current()
 
 
 		elif vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
 			#vehicle_root.car_mesh_rotation_offset.rotation.lerp(Vector3(0, -45, 0), delta)
 			#vehicle_root.car_mesh_rotation_offset.rotation.y = 0 + (-90 - 0) * delta / 6
 			#vehicle_root.car_mesh_rotation_offset.rotation.y = -45
-			# start emitting drift particles
-			vehicle_root.drift_particles.emitting = true
+			if mesh_turn_tween:
+				mesh_turn_tween.kill()
+			mesh_turn_tween = get_tree().create_tween()
+			var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(-45), deg_to_rad(0))
+			mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .5).from_current()
+
 			pass
+			
+			
+		# start emitting drift particles
+		vehicle_root.drift_particles.emitting = true
+		pass
 	
 	# ON STATE EXIT
 	if from == vehicle_root.state_drifting.name:
@@ -153,10 +180,12 @@ func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
 		vehicle_root.angular_velocity = Vector3.ZERO
 		
 		# revert car_mesh rotation offset
-		if vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
-			vehicle_root.car_mesh_rotation_offset.rotation.y = 0
-		elif vehicle_root.drift_dir == vehicle_root.drift_direction.RIGHT:
-			vehicle_root.car_mesh_rotation_offset.rotation.y = 0
+		if mesh_turn_tween:
+			mesh_turn_tween.kill()
+		mesh_turn_tween = get_tree().create_tween()
+		var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(0), deg_to_rad(0))
+		mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .5).from_current()
+
 		
 		# revert drift_dir parameter
 		#print("Reverting drift_dir!")

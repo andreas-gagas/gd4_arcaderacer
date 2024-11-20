@@ -22,7 +22,7 @@ func fsm_process(delta : float):
 		elif steering_input < 0:
 			vehicle_root.drift_dir = vehicle_root.drift_direction.LEFT
 			fsm.set_trigger("Grounded->Drifting")
-	if Input.is_key_pressed(KEY_ESCAPE):
+	if Input.is_action_just_pressed("escape"):
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		else:

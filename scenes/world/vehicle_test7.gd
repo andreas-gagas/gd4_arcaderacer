@@ -12,6 +12,8 @@ extends RigidBody3D
 @export var acceleration_back : float = 40
 @export var braking_decel : float = 60
 @export var max_turn_speed = 60
+@export_range(-10.0, 10.0) var drift_grippyness = .25
+@export_range(5.5, 20) var drift_strength = 10
 
 @onready var fsm: Node = $StateMachinePlayer
 @onready var state_grounded: Node = $StateMachinePlayer/Grounded
