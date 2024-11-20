@@ -1,6 +1,8 @@
 extends Node
 @onready var vehicle_root: RigidBody3D = $"../.."
 @onready var fsm: Node = $".."
+@onready var first_boost_timer: Timer = $first_boost_timer
+@onready var second_boost_timer: Timer = $second_boost_timer
 
 var throttle_input : float
 var steering_input : float
@@ -14,7 +16,6 @@ func _ready() -> void:
 	pass # Replace with function body.
 
 func fsm_process(delta : float):
-	GamepadControllerManager.update_current_controller(0, "PS4 Controller")
 	
 	if Input.is_action_just_released("jump"):
 		fsm.set_trigger("Drifting->Grounded")
@@ -25,9 +26,9 @@ func fsm_process(delta : float):
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	throttle_input = Input.get_axis("move_back", "move_forward")
-	steering_input = Input.get_axis("move_right", "move_left") / 2
+	steering_input = Input.get_axis("move_right", "move_left") / 2 # biar gak begitu powerful steeringnya
 	input_drift = Input.is_action_pressed("jump")
-	print("throttle : " + str(throttle_input) + " steering: " + str(steering_input) )
+	#print("throttle : " + str(throttle_input) + " steering: " + str(steering_input) )
 	
 		
 	pass
@@ -126,7 +127,16 @@ func apply_drift_force():
 
 func remap(value, from_min, from_max, to_min, to_max):
 	return to_min + (value - from_min) * (to_max - to_min) / (from_min - from_max)
-	
+
+func first_boost_timer_timeout():
+	vehicle_root.remaining_boost_duration += vehicle_root.first_boost_duration
+	print("first boot reqs matched! remaining_boost_duration: " + str(vehicle_root.remaining_boost_duration))
+	pass
+
+func second_boost_timer_timeout():
+	vehicle_root.remaining_boost_duration += vehicle_root.second_boost_duration
+	print("second boot reqs matched! remaining_boost_duration: " + str(vehicle_root.remaining_boost_duration))
+	pass
 
 func _on_state_machine_player_updated(source: Variant, state: Variant, delta: Variant) -> void:
 	#print(source + " : " + state + " : " + str(delta))
@@ -137,41 +147,37 @@ func _on_state_machine_player_updated(source: Variant, state: Variant, delta: Va
 			fsm_physics(delta)
 	pass # Replace with function body.
 
+var mesh_turn_tween 
 func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
-	var mesh_turn_tween 
 	
 	# ON STATE ENTER
 	if to == vehicle_root.state_drifting.name:
 		GamepadControllerManager.start_controller_vibration(1,2,1)
 		#print(str(vehicle_root.drift_dir))
-		# set mesh rotation
+		# set & tween mesh rotation
 		if vehicle_root.drift_dir == vehicle_root.drift_direction.RIGHT:
-			#print("rotating right!!")
-			#vehicle_root.car_mesh_rotation_offset.rotation.lerp(Vector3(0, 45, 0), delta)
-			#vehicle_root.car_mesh_rotation_offset.rotation.y = 0 + (90 - 0) * delta / 6
-			#vehicle_root.car_mesh_rotation_offset.rotation.y = 45
 			if mesh_turn_tween:
 				mesh_turn_tween.kill()
 			mesh_turn_tween = get_tree().create_tween()
-			var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(45), deg_to_rad(0))
+			var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(40), deg_to_rad(-15))
 			mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .5).from_current()
-
-
 		elif vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
-			#vehicle_root.car_mesh_rotation_offset.rotation.lerp(Vector3(0, -45, 0), delta)
-			#vehicle_root.car_mesh_rotation_offset.rotation.y = 0 + (-90 - 0) * delta / 6
-			#vehicle_root.car_mesh_rotation_offset.rotation.y = -45
 			if mesh_turn_tween:
 				mesh_turn_tween.kill()
 			mesh_turn_tween = get_tree().create_tween()
-			var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(-45), deg_to_rad(0))
+			var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(-40), deg_to_rad(15))
 			mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .5).from_current()
-
 			pass
-			
-			
+
 		# start emitting drift particles
 		vehicle_root.drift_particles.emitting = true
+		
+		# start drift timers
+		# init & start drift timer
+		first_boost_timer.wait_time = vehicle_root.minimum_drift_duration_for_first_boost
+		first_boost_timer.start()
+		second_boost_timer.wait_time = vehicle_root.minimum_drift_duration_for_second_boost
+		second_boost_timer.start()
 		pass
 	
 	# ON STATE EXIT
@@ -179,19 +185,22 @@ func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
 		# revert drift physics
 		vehicle_root.angular_velocity = Vector3.ZERO
 		
-		# revert car_mesh rotation offset
+		# revert car_mesh rotation by tweening 
 		if mesh_turn_tween:
 			mesh_turn_tween.kill()
 		mesh_turn_tween = get_tree().create_tween()
 		var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(0), deg_to_rad(0))
 		mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .5).from_current()
 
-		
 		# revert drift_dir parameter
 		#print("Reverting drift_dir!")
 		vehicle_root.drift_dir == vehicle_root.drift_direction.NONE
 		
 		# stop emitting drift particles
 		vehicle_root.drift_particles.emitting = false
+		
+		# stop drift timers
+		first_boost_timer.stop()
+		second_boost_timer.stop()
 		pass
 	pass # Replace with function body.

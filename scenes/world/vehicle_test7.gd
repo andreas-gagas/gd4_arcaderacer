@@ -1,19 +1,28 @@
 extends RigidBody3D
 # damn pls end this suffering (in a good way)
 # okay it finally done! (the base); it was studied from wallaber's racing game 
+@export_category("General Settings")
+@export var springs : Array[Node3D]		## the springs that will be used to keep vehicle from touching ground. add the spring prefab to this car_mesh child and reference it into this array
+@export var top_speed_fwd : float = 20		## top speed when going forward
+@export var top_speed_back : float = 20		## top speed when reversing
+@export var drifting_first_boost_top_speed_addition_fwd : float = 10	## the amount to add to current top speed when player get the first tier drift boost
+@export var drifting_second_boost_top_speed_addition_fwd : float = 20	## the amount to add to current top speed when player get the second tier drift boost
+@export var force_responsiveness : float = 0.2		## yes...
+@export var turn_accel : float = 360	## also, yes...
+@export var acceleration_fwd : float = 40	## forward acceleration
+@export var acceleration_back : float = 40	## backward acceleration
+@export var braking_decel : float = 100		## how much force to apply when vehicle is braking
+@export var max_turn_speed = 60				## how fast vehicle turns???
+@export_range(5.5, 20) var drift_strength = 10		## how "grippy" is the drift? 7.5 is not grippy, 15 is really grippy (also affected by top speed btw)
+@export var remaining_boost_duration = 0	## self explanatory, maybe i gotta split this per drift boost tier
 
-@export var springs : Array[Node3D]
-@export var top_speed_fwd : float = 20
-@export var top_speed_back : float = 20
-@export var drifting_top_speed_fwd : float = 20
-@export var force_responsiveness : float = 0.2
-@export var turn_accel : float = 360
-@export var acceleration_fwd : float = 40
-@export var acceleration_back : float = 40
-@export var braking_decel : float = 60
-@export var max_turn_speed = 60
-@export_range(-10.0, 10.0) var drift_grippyness = .25
-@export_range(5.5, 20) var drift_strength = 10
+@export_category("Boost")
+@export var first_boost_speed_addition : float = 10
+@export var second_boost_speed_addition : float = 20
+@export var first_boost_duration : float = 3
+@export var second_boost_duration : float = 2
+@export var minimum_drift_duration_for_first_boost : float = 2.0 
+@export var minimum_drift_duration_for_second_boost : float = 4.0 
 
 @onready var fsm: Node = $StateMachinePlayer
 @onready var state_grounded: Node = $StateMachinePlayer/Grounded
