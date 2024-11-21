@@ -129,12 +129,22 @@ func remap(value, from_min, from_max, to_min, to_max):
 	return to_min + (value - from_min) * (to_max - to_min) / (from_min - from_max)
 
 func first_boost_timer_timeout():
+	# add boost duration
 	vehicle_root.remaining_boost_duration += vehicle_root.first_boost_duration
+	# change drift particle
+	vehicle_root.drift_particles.emitting = false
+	vehicle_root.boost1_drift_particles.emitting = true
+	vehicle_root.boost2_drift_particles.emitting = false
 	print("first boot reqs matched! remaining_boost_duration: " + str(vehicle_root.remaining_boost_duration))
 	pass
 
 func second_boost_timer_timeout():
+	# add boost duration
 	vehicle_root.remaining_boost_duration += vehicle_root.second_boost_duration
+	# change drift particle
+	vehicle_root.drift_particles.emitting = false
+	vehicle_root.boost1_drift_particles.emitting = false
+	vehicle_root.boost2_drift_particles.emitting = true
 	print("second boot reqs matched! remaining_boost_duration: " + str(vehicle_root.remaining_boost_duration))
 	pass
 
@@ -160,17 +170,19 @@ func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
 				mesh_turn_tween.kill()
 			mesh_turn_tween = get_tree().create_tween()
 			var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(40), deg_to_rad(-15))
-			mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .5).from_current()
+			mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .25).from_current()
 		elif vehicle_root.drift_dir == vehicle_root.drift_direction.LEFT:
 			if mesh_turn_tween:
 				mesh_turn_tween.kill()
 			mesh_turn_tween = get_tree().create_tween()
 			var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(-40), deg_to_rad(15))
-			mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .5).from_current()
+			mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .25).from_current()
 			pass
 
-		# start emitting drift particles
+		# start emitting drift particles, stop boost1 & boost2 drift particles
 		vehicle_root.drift_particles.emitting = true
+		vehicle_root.boost1_drift_particles.emitting = false
+		vehicle_root.boost2_drift_particles.emitting = false
 		
 		# start drift timers
 		# init & start drift timer
@@ -190,14 +202,16 @@ func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
 			mesh_turn_tween.kill()
 		mesh_turn_tween = get_tree().create_tween()
 		var target_rotation = Vector3(deg_to_rad(0), deg_to_rad(0), deg_to_rad(0))
-		mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .5).from_current()
+		mesh_turn_tween.tween_property(vehicle_root.car_mesh_rotation_offset, "rotation", target_rotation, .25).from_current()
 
 		# revert drift_dir parameter
 		#print("Reverting drift_dir!")
 		vehicle_root.drift_dir == vehicle_root.drift_direction.NONE
 		
-		# stop emitting drift particles
+		# stop emitting all drift particles
 		vehicle_root.drift_particles.emitting = false
+		vehicle_root.boost1_drift_particles.emitting = false
+		vehicle_root.boost2_drift_particles.emitting = false
 		
 		# stop drift timers
 		first_boost_timer.stop()
