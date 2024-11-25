@@ -1,14 +1,20 @@
 extends Node
 @onready var vehicle_root: RigidBody3D = $"../.."
 @onready var fsm: Node = $".."
+@onready var boost_timer: Node = $"../boost_timer"
 
 var throttle_input : float
 var steering_input : float
 var input_drift : bool = false
 var turn_vel : float = 0
+var top_speed_fwd_default : float
+var acceleration_fwd_default : float
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	# save initial top speed
+	top_speed_fwd_default = vehicle_root.top_speed_fwd
+	acceleration_fwd_default = vehicle_root.acceleration_fwd
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	pass # Replace with function body.
 
@@ -31,6 +37,16 @@ func fsm_process(delta : float):
 	throttle_input = Input.get_axis("move_back", "move_forward")
 	steering_input = Input.get_axis("move_right", "move_left")
 	input_drift = Input.is_action_pressed("jump")
+	
+	print("boost dur: " + str(vehicle_root.remaining_boost_duration) + " -- timer dur: " + str(boost_timer.get_timer_duration()))
+	Console.print_line("boost dur: " + str(vehicle_root.remaining_boost_duration) + " -- timer dur: " + str(boost_timer.get_timer_duration()))
+	# update remaining_boost_duration
+	#vehicle_root.remaining_boost_duration = boosting_timer.time_left
+	# process timer
+	vehicle_root.remaining_boost_duration = boost_timer.get_timer_duration()
+	if  boost_timer.timerFinished:
+		vehicle_root.top_speed_fwd = top_speed_fwd_default
+		vehicle_root.acceleration_fwd = acceleration_fwd_default
 	pass
 
 func fsm_physics(delta : float):
@@ -100,7 +116,14 @@ func fsm_physics(delta : float):
 
 func remap(value, from_min, from_max, to_min, to_max):
 	return to_min + (value - from_min) * (to_max - to_min) / (from_min - from_max)
-	
+
+func _on_boosting_timer_timeout() -> void:
+	print("Grounded: boost timer ended")
+	# stop boost when duration ended, reset timer
+	vehicle_root.top_speed_fwd = top_speed_fwd_default
+	vehicle_root.acceleration_fwd = acceleration_fwd_default
+	vehicle_root.remaining_boost_duration = 0
+	pass # Replace with function body.
 
 func _on_state_machine_player_updated(source: Variant, state: Variant, delta: Variant) -> void:
 	#print(source + " : " + state + " : " + str(delta))
@@ -116,9 +139,15 @@ func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
 	# ON STATE ENTER
 	if (to == vehicle_root.state_grounded.name):
 		#print("zeroing angular velocity!")
+		if vehicle_root.remaining_boost_duration > 0:
+			boost_timer.set_timer_duration(vehicle_root.remaining_boost_duration)
+			
+			vehicle_root.top_speed_fwd += vehicle_root.drifting_first_boost_top_speed_addition_fwd
+			pass
 		pass
 		
 	# ON STATE EXIT
 	if (from == vehicle_root.state_grounded.name):
+		
 		pass
 	pass # Replace with function body.
