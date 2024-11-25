@@ -143,6 +143,7 @@ func _on_state_machine_player_transited(from: Variant, to: Variant) -> void:
 			boost_timer.set_timer_duration(vehicle_root.remaining_boost_duration)
 			
 			vehicle_root.top_speed_fwd += vehicle_root.drifting_first_boost_top_speed_addition_fwd
+			vehicle_root.acceleration_fwd = vehicle_root.drifting_boost_acceleration_fwd
 			pass
 		pass
 		

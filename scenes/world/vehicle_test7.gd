@@ -6,24 +6,25 @@ extends RigidBody3D
 @export var top_speed_fwd : float = 20		## top speed when going forward
 @export var top_speed_back : float = 20		## top speed when reversing
 @export var force_responsiveness : float = 0.2		## yes...
-@export var turn_accel : float = 360	## also, yes...
-@export var acceleration_fwd : float = 40	## forward acceleration
+@export var turn_accel : float = 1000 # was 360		## also, yes...
+@export var acceleration_fwd : float = 80	## forward acceleration
 @export var acceleration_back : float = 40	## backward acceleration
 @export var braking_decel : float = 100		## how much force to apply when vehicle is braking
-@export var max_turn_speed = 60				## how fast vehicle turns???
+@export var max_turn_speed = 80				## how fast vehicle turns???
 @export_range(5.5, 20) var drift_strength = 10		## how "grippy" is the drift? 7.5 is not grippy, 15 is really grippy (also affected by top speed btw)
 @export var remaining_boost_duration = 0	## self explanatory, maybe i gotta split this per drift boost tier
 
 @export_category("Boost")
 @export var drifting_boost_acceleration_fwd : float = 40	## drifting boost forward acceleration
-@export var drifting_first_boost_top_speed_addition_fwd : float = 10	## the amount to add to current top speed when player get the first tier drift boost
-@export var drifting_second_boost_top_speed_addition_fwd : float = 20	## the amount to add to current top speed when player get the second tier drift boost
+@export var drifting_first_boost_top_speed_addition_fwd : float = 5	## the amount to add to current top speed when player get the first tier drift boost
+@export var drifting_second_boost_top_speed_addition_fwd : float = 10	## the amount to add to current top speed when player get the second tier drift boost
 @export var first_boost_speed_addition : float = 10
 @export var second_boost_speed_addition : float = 20
-@export var first_boost_duration : float = 3
-@export var second_boost_duration : float = 2
-@export var minimum_drift_duration_for_first_boost : float = 2.0 
-@export var minimum_drift_duration_for_second_boost : float = 4.0 
+@export var first_boost_duration : float = 1.75
+@export var second_boost_duration : float = 1
+@export var minimum_drift_duration_for_first_boost : float = 1
+@export var minimum_drift_duration_for_second_boost : float = 1.75
+@export var maximum_boost_duration = 6
 
 @onready var fsm: Node = $StateMachinePlayer
 @onready var state_grounded: Node = $StateMachinePlayer/Grounded
@@ -54,6 +55,9 @@ func _process(delta: float) -> void:
 	
 func _physics_process(delta: float) -> void:
 	fsm.update("physics", delta)
+	
+	# clamp boost duration
+	remaining_boost_duration = clamp(remaining_boost_duration, 0, maximum_boost_duration)
 	
 func _get_point_velocity(point : Vector3) -> Vector3:
 	return linear_velocity + angular_velocity.cross(point - to_global(center_of_mass))
